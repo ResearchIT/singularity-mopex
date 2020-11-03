@@ -1,0 +1,40 @@
+Bootstrap:docker
+From:centos:7
+
+%environment
+export JAVA_HOME=/etc/alternatives/jre
+export MOPEX_INSTALLATION=/opt/mopex
+export SIRTF_JAVA=${MOPEX_INSTALLATION}/jre
+export SIRTF_BIN=${MOPEX_INSTALLATION}/bin
+export WRAPPER_UTILS=${MOPEX_INSTALLATION}/bin
+export SIRTF_ANC=${MOPEX_INSTALLATION}/source
+export PATH=${MOPEX_INSTALLATION}/bin:${MOPEX_INSTALLATION}:$PATH
+export LD_LIBRARY_PATH=${MOPEX_INSTALLATION}/shrlib:${LD_LIBRARY_PATH}
+export PERL_PATH=/usr/bin
+export SIRTF_QA=cdf
+export SIRTF_CDF=cdf
+export SIRTF_CAL=cal
+
+
+%post
+# the packaged jre crashed for me so I let's pull in a recent one
+yum install -y tcsh perl libXext libXrender libXtst freetype java-11-openjdk java-11-openjdk-devel which
+curl -L https://irsa.ipac.caltech.edu/data/SPITZER/docs/dataanalysistools/tools/mopex/mopexdownload/mopex18_5_0-linux64.sh -o mopex18_5_0-linux64.sh
+tail -n+31 mopex18_5_0-linux64.sh > mopex.tar
+mkdir artifacts
+tar -C ./artifacts -xf mopex.tar
+mkdir -p /opt/mopex
+cd ./artifacts
+./INSTALL <<< "/opt/mopex"
+cd /
+rm -rf artifacts
+rm -rf mopex*
+cd /opt/mopex/platform/linux64/bin
+curl -L https://irsa.ipac.caltech.edu/data/SPITZER/docs/dataanalysistools/tools/mopex/mopexdownload/fiducial_image_frame_linux64bit_patch2014 -o fiducial_image_frame
+curl -L https://irsa.ipac.caltech.edu/data/SPITZER/docs/dataanalysistools/tools/mopex/mopexdownload/mosaic_coadd_linux64_patch2016 -o mosaic_coadd
+curl -L https://irsa.ipac.caltech.edu/data/SPITZER/docs/dataanalysistools/tools/mopex/mopexdownload/mosaic_rmask_linux64_patch2016 -o mosaic_rmask
+curl -L https://irsa.ipac.caltech.edu/data/SPITZER/docs/dataanalysistools/tools/mopex/mopexdownload/sourcestimate_linux64_patch2019 -o sourcestimate
+cd /
+
+%runscript
+exec "$@"
